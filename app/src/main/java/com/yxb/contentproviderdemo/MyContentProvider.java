@@ -35,7 +35,13 @@ public class MyContentProvider extends ContentProvider {
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
-        return mSQLiteDatabase.delete(ContentProviderDemoSQLiteHelper.USER_INFO,selection,selectionArgs);
+        int count = mSQLiteDatabase.delete(ContentProviderDemoSQLiteHelper.USER_INFO,selection,selectionArgs);
+        if(count >= 1){
+            // 此处向外界通知ContentProvider的数据发生了变化，由于ContentProvider的调用是跟调用者是同一个进程中
+            // 所以getContext()取得了同一个对象，从而getContentResolver()也是同一个对象
+            getContext().getContentResolver().notifyChange(USER_INTO_URI,null);
+        }
+        return count;
     }
 
     @Override
@@ -72,6 +78,9 @@ public class MyContentProvider extends ContentProvider {
                 break;
         }
         if(newId > 0){
+            // 此处向外界通知ContentProvider的数据发生了变化，由于ContentProvider的调用是跟调用者是同一个进程中
+            // 所以getContext()取得了同一个对象，从而getContentResolver()也是同一个对象
+            getContext().getContentResolver().notifyChange(newUri,null);
             return newUri;
         }
         // TODO: Implement this to handle requests to insert a new row.
@@ -81,7 +90,6 @@ public class MyContentProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
         mSQLiteDatabase = new ContentProviderDemoSQLiteHelper(getContext()).getWritableDatabase();
-        // TODO: Implement this to initialize your content provider on startup.
         return true;
     }
 
@@ -108,6 +116,12 @@ public class MyContentProvider extends ContentProvider {
     @Override
     public int update(Uri uri, ContentValues values, String selection,
                       String[] selectionArgs) {
-         return mSQLiteDatabase.update(uri.getPath(),values,selection,selectionArgs);
+        int count = mSQLiteDatabase.update(uri.getPath(),values,selection,selectionArgs);
+        if(count >= 1){
+            // 此处向外界通知ContentProvider的数据发生了变化，由于ContentProvider的调用是跟调用者是同一个进程中
+            // 所以getContext()取得了同一个对象，从而getContentResolver()也是同一个对象
+            getContext().getContentResolver().notifyChange(USER_INTO_URI,null);
+        }
+        return count;
     }
 }
