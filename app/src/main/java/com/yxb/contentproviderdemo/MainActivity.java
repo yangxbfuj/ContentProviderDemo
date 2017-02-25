@@ -20,10 +20,8 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.Toast;
 
-import com.google.android.gms.appindexing.AppIndex;
 
 import java.util.ArrayList;
 
@@ -44,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
         setContentObserver();
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
+        insertByMultiMethread();
     }
 
     private void initView() {
@@ -224,8 +223,29 @@ public class MainActivity extends AppCompatActivity {
         contentValues.put(ContentProviderDemoSQLiteHelper.USER_NAME, name);
         contentValues.put(ContentProviderDemoSQLiteHelper.USER_PHONE, phone);
         Uri uri = getContentResolver().insert(MyContentProvider.USER_INTO_URI, contentValues);
-        Log.d(getClass().getSimpleName(),"Uri = " + uri.toString());
+        Log.d(getClass().getSimpleName(), "Uri = " + uri.toString());
         Toast.makeText(this, "插入id为 " + uri.getLastPathSegment(), Toast.LENGTH_SHORT).show();
+    }
+
+    private void insertByMultiMethread() {
+        int loop = 100;
+        while (loop-- > 0) {
+            new ContentProviderCommand<Cursor>() {
+                @Override
+                protected Cursor doCommand() {
+                    Cursor cursor = getContentResolver().query(MyContentProvider.USER_INTO_URI, new String[]{ContentProviderDemoSQLiteHelper.USER_NAME,
+                            ContentProviderDemoSQLiteHelper.USER_PHONE}, ContentProviderDemoSQLiteHelper.USER_NAME + "=? and "
+                            + ContentProviderDemoSQLiteHelper.USER_PHONE + "=?", new String[]{"A", "1"}, null);
+                    return cursor;
+                }
+
+                @Override
+                protected void onPostExecute(Cursor result) {
+                    Log.d(MainActivity.this.getClass().getSimpleName(),
+                            "query success in thread " + Thread.currentThread().getName());
+                }
+            }.execute();
+        }
     }
 
     private final int MESSAGE_DATA_CHANGED = 1000;
@@ -243,7 +263,7 @@ public class MainActivity extends AppCompatActivity {
     ContentObserver contentObserver = new MyContentObserver(new Handler());
 
     private void setContentObserver() {
-        Log.d(getClass().getSimpleName(),"registerContentObserver uri = "+ MyContentProvider.USER_INTO_URI.toString());
+        Log.d(getClass().getSimpleName(), "registerContentObserver uri = " + MyContentProvider.USER_INTO_URI.toString());
         getContentResolver().registerContentObserver(MyContentProvider.USER_INTO_URI, true, contentObserver);
     }
 
@@ -253,7 +273,7 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    public static class MyContentObserver extends ContentObserver{
+    public static class MyContentObserver extends ContentObserver {
 
         /**
          * Creates a content observer.
@@ -267,6 +287,7 @@ public class MainActivity extends AppCompatActivity {
 
         /**
          * 当观察到数据改变时，回调此方法
+         *
          * @param selfChange
          * @param uri
          */
@@ -279,6 +300,7 @@ public class MainActivity extends AppCompatActivity {
 
         /**
          * 当观察到数据改变时，回调此方法
+         *
          * @param selfChange
          */
         @Override
